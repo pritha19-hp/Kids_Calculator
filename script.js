@@ -16,7 +16,7 @@ let openParens = 0;
 const encourageMessages = [
   '🌟 Great job!', '🎉 Awesome!', '🚀 Math is fun!',
   '💫 You\'re a star!', '🎈 Fantastic!', '🌈 Brilliant!',
-  '🦄 Magic!', '⚡ Super fast!', '🍀 Lucky answer!', '🏆 Champion!'
+  '🦄 Magic!', '⚡ Super fast!', '🍀 Lucky answer!', '🏆 Champion!','you did a great job💃'
 ];
 
 // ---- Math facts ----
@@ -29,6 +29,7 @@ const mathFacts = [
   '🌙 There are 86,400 seconds in a single day!',
   '🎲 The opposite faces of a dice always add up to 7!',
   '🐝 Honeybees use hexagons because it\'s the most efficient shape!',
+  'Negative × Negative = Positive ➖✖️➖ = ➕'
 ];
 
 // ============================================================
