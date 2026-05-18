@@ -106,54 +106,45 @@ function applyUser() {
 }
 
 // ============================================================
-// CLOUD HISTORY — window.storage (shared = true)
+// CLOUD HISTORY — Connected to Render Backend
 // ============================================================
+
+const BACKEND_URL = 'https://YOUR-RENDER-BACKEND-URL-HERE.onrender.com';
+
 async function loadHistory() {
   try {
-    let data = null;
-    if (currentUser && window.storage) {
-      const result = await window.storage.get(currentUser.key, true);
-      if (result) data = JSON.parse(result.value);
-    }
-    if (!data) {
-      const local = localStorage.getItem('mmstar_history_local');
-      data = local ? JSON.parse(local) : [];
-    }
+    const response = await fetch(`${BACKEND_URL}/calculations`);
+    if (!response.ok) throw new Error('Server error');
+    
+    const data = await response.json();
     renderHistory(data);
   } catch (e) {
+    console.error("Could not load cloud history, using local backup:", e);
     const local = localStorage.getItem('mmstar_history_local');
     renderHistory(local ? JSON.parse(local) : []);
   }
 }
 
 async function saveHistoryItem(expr, result) {
-  const item = {
-    expr,
-    result,
-    time: new Date().toISOString(),
-    id: Date.now()
-  };
+  const item = { expr, result };
+  
   try {
-    let history = [];
-    if (currentUser && window.storage) {
-      const res = await window.storage.get(currentUser.key, true);
-      if (res) history = JSON.parse(res.value);
-    } else {
-      const local = localStorage.getItem('mmstar_history_local');
-      history = local ? JSON.parse(local) : [];
-    }
-    history.unshift(item);
-    if (history.length > 100) history = history.slice(0, 100);
-
-    if (currentUser && window.storage) {
-      await window.storage.set(currentUser.key, JSON.stringify(history), true);
-    }
-    localStorage.setItem('mmstar_history_local', JSON.stringify(history));
-    renderHistory(history);
+    const response = await fetch(`${BACKEND_URL}/calculations`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(item)
+    });
+    
+    if (!response.ok) throw new Error('Failed to save');
+    const updatedHistory = await response.json();
+    
+    localStorage.setItem('mmstar_history_local', JSON.stringify(updatedHistory));
+    renderHistory(updatedHistory);
   } catch (e) {
+    console.error("Could not save to cloud, saving locally:", e);
     const local = localStorage.getItem('mmstar_history_local');
-    const history = local ? JSON.parse(local) : [];
-    history.unshift(item);
+    let history = local ? JSON.parse(local) : [];
+    history.unshift({ ...item, time: new Date().toISOString(), id: Date.now() });
     localStorage.setItem('mmstar_history_local', JSON.stringify(history.slice(0, 100)));
     renderHistory(history);
   }
@@ -161,45 +152,23 @@ async function saveHistoryItem(expr, result) {
 
 async function clearHistory() {
   try {
-    if (currentUser && window.storage) {
-      await window.storage.set(currentUser.key, JSON.stringify([]), true);
-    }
+    const response = await fetch(`${BACKEND_URL}/calculations`, {
+      method: 'DELETE'
+    });
+    
+    if (!response.ok) throw new Error('Failed to clear');
     localStorage.setItem('mmstar_history_local', JSON.stringify([]));
     renderHistory([]);
   } catch(e) {
+    console.error("Could not clear cloud history:", e);
     localStorage.setItem('mmstar_history_local', JSON.stringify([]));
     renderHistory([]);
   }
 }
 
-function renderHistory(items) {
-  const list = document.getElementById('historyList');
-  if (!items || items.length === 0) {
-    list.innerHTML = `<div class="history-empty">
-      <span class="empty-emoji">🧮</span>
-      Do some math and your<br>calculations will appear here!
-    </div>`;
-    return;
-  }
-  list.innerHTML = items.map(item => {
-    const d = new Date(item.time);
-    const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · ' +
-      d.toLocaleDateString([], { month: 'short', day: 'numeric' });
-    return `<div class="history-item" onclick="reuseHistory('${escapeAttr(item.result)}')">
-      <div class="hi-expr">${escapeHTML(item.expr)}</div>
-      <div class="hi-result">= ${escapeHTML(item.result)}</div>
-      <div class="hi-time">🕐 ${timeStr}</div>
-    </div>`;
-  }).join('');
-}
 
-function reuseHistory(val) {
-  displayValue = String(val);
-  expression = '';
-  justCalculated = true;
-  updateDisplay();
-  triggerRipple(document.querySelector('.calc-btn.btn-eq'));
-}
+
+
 
 // ============================================================
 // THEME
