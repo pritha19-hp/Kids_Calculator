@@ -109,7 +109,7 @@ function applyUser() {
 // CLOUD HISTORY — Connected to Render Backend
 // ============================================================
 
-const BACKEND_URL = 'https://YOUR-RENDER-BACKEND-URL-HERE.onrender.com';
+const BACKEND_URL = 'https://math-magic-q04m.onrender.com';
 
 async function loadHistory() {
   try {
